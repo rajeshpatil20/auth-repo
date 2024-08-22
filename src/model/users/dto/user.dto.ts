@@ -1,3 +1,4 @@
+import { ApiProperty } from "@nestjs/swagger";
 import { Expose } from "class-transformer";
 import { IsNotEmpty, IsString, Matches } from "class-validator";
 import { AbstractDto } from "src/common/dto/abstract.dto";
@@ -6,6 +7,7 @@ export class UserDto extends AbstractDto {
   @Expose()
   @IsNotEmpty()
   @IsString()
+  @ApiProperty()y
   /**
    * Validates that the input meets the following criteria:
    * 1. The input must be exactly 6 characters long.
