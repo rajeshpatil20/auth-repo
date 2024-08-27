@@ -34,7 +34,7 @@ export class CountryController {
   @Put(":id")
   async updateCountry(
     @Param("id") id: string,
-    @Body() CountryData: { CountryCode: string, CountryName: string, Active: boolean},
+    @Body() CountryData: { CountryCode: string, CountryName: string, Active: boolean },
   ): Promise<CountryModel> {
     return this.countryService.updateCountry({
       where: { id: id },

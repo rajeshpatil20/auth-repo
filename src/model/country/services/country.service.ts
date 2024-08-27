@@ -4,10 +4,11 @@ import { Prisma, Country } from "@prisma/client";
 import { CountryDto } from "../dto";
 import { createCustomError } from "src/common/utils/helpers";
 import { plainToInstance } from "class-transformer";
+import { STATUS_CODES } from "http";
 
 @Injectable()
 export class CountryService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async country(
     countryWhereUniqueInput: Prisma.CountryWhereUniqueInput,
@@ -19,8 +20,8 @@ export class CountryService {
       if (!country) {
         throw createCustomError("Country not found", HttpStatus.NOT_FOUND);
       }
-      console.log("country", typeof(country));
-      
+      console.log("country", typeof (country));
+
       return plainToInstance(CountryDto, country);
     } catch (e) {
       throw createCustomError(
@@ -33,6 +34,12 @@ export class CountryService {
   async getAllCountry() {
     try {
       const country = await this.prisma.country.findMany();
+      return {
+
+        STATUS_CODE: HttpStatus.OK,
+        message: "Get all Country",
+        data: country,
+      } as any
       return plainToInstance(CountryDto, country);
     } catch (e) {
       throw createCustomError(
@@ -43,17 +50,21 @@ export class CountryService {
   }
 
 
-  async createCountry(data: Prisma.CountryCreateInput): Promise<Country> {   
+  async createCountry(data: Prisma.CountryCreateInput): Promise<Country> {
     try {
       const createCountry = await this.prisma.country.create({
         data,
       });
-      console.log("createCountry", createCountry);
-      
-      return createCountry;
+      return {
+
+        STATUS_CODE: HttpStatus.CREATED,
+        message: "Country created successfully",
+        data: createCountry,
+      } as any
+      //console.log("createCountry", createCountry);
     } catch (e) {
       console.log("ERROR", e);
-      
+
       throw createCustomError(
         e.message || "Something went wrong",
         e.status || HttpStatus.BAD_REQUEST,
@@ -70,7 +81,12 @@ export class CountryService {
         where: params.where,
         data: params.data,
       });
-      return updateCountry;
+      return {
+
+        STATUS_CODE: HttpStatus.OK,
+        message: "Country Updated successfully",
+        data: updateCountry,
+      } as any
     } catch (e) {
       throw createCustomError(
         e.message || "Something went wrong",

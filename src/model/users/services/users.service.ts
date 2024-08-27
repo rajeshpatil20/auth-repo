@@ -1,4 +1,4 @@
-import { Body, HttpStatus, Injectable, NotFoundException, Post } from '@nestjs/common';
+import { Body, HttpStatus, Injectable, NotFoundException, Post, UnauthorizedException } from '@nestjs/common';
 import { Prisma, User } from '@prisma/client';
 import { createCustomError } from 'src/common/utils/helpers';
 
@@ -6,10 +6,14 @@ import { PrismaService } from "../../prisma/prisma.service";
 import { CreateUserDto } from '../dto';
 //import { JwtService } from '@nestjs/jwt';
 import { sign } from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
+import { request } from 'http';
+import { REQUEST } from '@nestjs/core';
+import { LoginDto } from '../dto/login.dto';
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService
-    // private readonly jwtService: JwtService
+    //private readonly jwtService: JwtService
   ) { }
 
   async createUser(data: Prisma.UserCreateInput): Promise<User> {
@@ -29,7 +33,6 @@ export class UsersService {
       );
     }
   }
-
 
   async getAlldata(skip: number = 0, take: number = 10): Promise<any> {
     try {
@@ -123,24 +126,22 @@ export class UsersService {
     }
   }
 
-  async findById(id: string):Promise<CreateUserDto> {
-    return this.prisma.user.findUnique({ where: { id:id } });
+  async findById(id: string): Promise<CreateUserDto> {
+    return this.prisma.user.findUnique({ where: { id: id } });
   }
-  // async findByEmail(email: string): Promise<CreateUserDto> {
-  //   return this.prisma.user.findUnique({ where: { email: email } });
-  // }
+  async findByEmail(email: string): Promise<CreateUserDto> {
+    return this.prisma.user.findUnique({ where: { email: email } });
+  }
 
-  async login(logindata: CreateUserDto) {
+  async login(logindata: LoginDto) {
     console.log("logindata", logindata);
-    
-    const userExits = await this.findById(logindata.id);
-    // const userId = await this.findByEmail(logindata);
-    if (userExits) {
-      if (logindata.password == (await userExits).password) {
+    const userExits = await this.findByEmail(logindata.email); //all data get throgh email using findbyemail method
+    if (userExits) { //Check the Userexisi or Not 
+      if (logindata.password == (await userExits).password) { //Also check Given password same or not in userexist database
         const token = await this.generateToken(userExits.id);
-        const query = "INSERT INTO Token (token, userid) VALUES (token,logindata.id)";
-        
-      
+        if (!token) {
+          throw new UnauthorizedException('Token is missing');
+        }
         return { token: token, data: userExits }
       }
       throw new NotFoundException('password not match');
@@ -150,11 +151,11 @@ export class UsersService {
 
   async generateToken(id: string): Promise<string> {
     const payload = { sub: id };
-    const secretKey = process.env.ACCES_TOKEN_SECRET_KEY;
-    const expiresIn = process.env.ACCES_TOKEN_EXPIRE_TIME;
+    const secretKey = process.env.ACCES_TOKEN_SECRET_KEY; //when token generate  predefined Secret key in ENV
+    const expiresIn = process.env.ACCES_TOKEN_EXPIRE_TIME;//also gave expire Time in ENV
     return await sign(payload, secretKey, { expiresIn });
   }
-  
+
   // async validateToken(token: string): Promise<any> {
   //   try {
   //     return verify(token);
@@ -170,5 +171,5 @@ export class UsersService {
       },
     });
   }
-  
+
 }
